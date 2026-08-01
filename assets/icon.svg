@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#10A37F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Root node (top center) -->
+  <circle cx="12" cy="3" r="3"/>
+
+  <!-- Left branch line -->
+  <line x1="12" y1="6" x2="5" y2="14"/>
+
+  <!-- Right branch line -->
+  <line x1="12" y1="6" x2="19" y2="14"/>
+
+  <!-- Left child node -->
+  <circle cx="5" cy="17" r="3"/>
+
+  <!-- Right child node -->
+  <circle cx="19" cy="17" r="3"/>
+</svg>

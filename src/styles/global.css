@@ -1,0 +1,67 @@
+/* ── GPTree Global Theme ──────────────────────────────────────────── */
+
+/* Dark theme (default, matches ChatGPT dark mode) */
+#gptree-root.gptree-dark,
+#gptree-root {
+  --gptree-bg: #212121;
+  --gptree-text: #ECECF1;
+  --gptree-muted: #8E8EA0;
+  --gptree-border: #4A4B57;
+  --gptree-accent: #10A37F;
+  --gptree-error: #EF4444;
+  --gptree-hover: #2A2B32;
+}
+
+/* Light theme */
+#gptree-root.gptree-light {
+  --gptree-bg: #FFFFFF;
+  --gptree-text: #1F1F1F;
+  --gptree-muted: #6B6B7B;
+  --gptree-border: #E5E5E5;
+  --gptree-accent: #10A37F;
+  --gptree-error: #DC2626;
+  --gptree-hover: #F7F7F8;
+}
+
+/* System preference fallback if no class is set */
+@media (prefers-color-scheme: light) {
+  #gptree-root:not(.gptree-dark):not(.gptree-light) {
+    --gptree-bg: #FFFFFF;
+    --gptree-text: #1F1F1F;
+    --gptree-muted: #6B6B7B;
+    --gptree-border: #E5E5E5;
+    --gptree-accent: #10A37F;
+    --gptree-error: #DC2626;
+    --gptree-hover: #F7F7F8;
+  }
+}
+
+/* ── Reset ────────────────────────────────────────────────────────── */
+
+#gptree-root,
+#gptree-root *,
+#gptree-root *::before,
+#gptree-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Scrollbar styling ────────────────────────────────────────────── */
+
+#gptree-root ::-webkit-scrollbar {
+  width: 6px;
+}
+
+#gptree-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#gptree-root ::-webkit-scrollbar-thumb {
+  background: var(--gptree-border);
+  border-radius: 3px;
+}
+
+#gptree-root ::-webkit-scrollbar-thumb:hover {
+  background: var(--gptree-muted);
+}
