@@ -1,122 +1,77 @@
-import { hierarchy, tree } from "d3-hierarchy";
+import dagre from "dagre";
 import type { ConversationTree, GptreeNode } from "./tree-model";
+
+const NODE_WIDTH = 200;
+const NODE_HEIGHT = 60;
 
 export interface LayoutNode {
   id: string;
+  position: { x: number; y: number };
   role: GptreeNode["role"];
   preview: string;
-  content: string;
-  x: number;
-  y: number;
   isOnActivePath: boolean;
   isCurrentNode: boolean;
+  childrenCount: number;
 }
 
 export interface LayoutLink {
-  source: { x: number; y: number };
-  target: { x: number; y: number };
+  source: string;
+  target: string;
   isOnActivePath: boolean;
 }
 
-/**
- * Converts the flat Map-based ConversationTree into a D3 hierarchy,
- * runs the tree layout algorithm, and returns positioned nodes + links.
- */
-export function computeTreeLayout(
-  conversationTree: ConversationTree,
-  nodeWidth: number,
-  nodeHeight: number,
-): {
+export function computeTreeLayout(tree: ConversationTree): {
   nodes: LayoutNode[];
   links: LayoutLink[];
-  bounds: { width: number; height: number };
 } {
-  const { nodes: nodeMap, rootId, activePath, currentNodeId } =
-    conversationTree;
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({
+    rankdir: "TB",
+    nodesep: 16,
+    ranksep: 40,
+    marginx: 20,
+    marginy: 20,
+  });
+  g.setDefaultEdgeLabel(() => ({}));
 
-  // ── Build a nested structure for D3 ──────────────────────────
-  interface D3Node {
-    id: string;
-    isOnActivePath: boolean;
-    isCurrentNode: boolean;
-    children?: D3Node[];
+  // Add nodes
+  for (const [id] of tree.nodes) {
+    g.setNode(id, { width: NODE_WIDTH, height: NODE_HEIGHT });
   }
 
-  function buildD3Node(nodeId: string): D3Node {
-    const node = nodeMap.get(nodeId)!;
-    return {
-      id: nodeId,
-      isOnActivePath: activePath.has(nodeId),
-      isCurrentNode: nodeId === currentNodeId,
-      children:
-        node.childrenIds.length > 0
-          ? node.childrenIds.map(buildD3Node)
-          : undefined,
-    };
+  // Add edges
+  for (const [, node] of tree.nodes) {
+    for (const childId of node.childrenIds) {
+      g.setEdge(node.id, childId);
+    }
   }
 
-  const d3Root = hierarchy(buildD3Node(rootId));
+  dagre.layout(g);
 
-  // ── Compute layout ───────────────────────────────────────────
-  const layout = tree<D3Node>().nodeSize([
-    nodeWidth + 60, // horizontal gap between sibling subtrees
-    nodeHeight + 80, // vertical gap between parent and child
-  ]);
-  layout(d3Root);
-
-  // ── Flatten nodes ────────────────────────────────────────────
-  const layoutNodes: LayoutNode[] = [];
-  d3Root.each((d) => {
-    const node = nodeMap.get(d.data.id)!;
-    layoutNodes.push({
-      id: d.data.id,
+  const nodes: LayoutNode[] = [];
+  for (const [id, node] of tree.nodes) {
+    const pos = g.node(id);
+    nodes.push({
+      id,
+      position: { x: pos.x - NODE_WIDTH / 2, y: pos.y },
       role: node.role,
       preview: node.preview,
-      content: node.content,
-      x: d.x!,
-      y: d.y!,
-      isOnActivePath: d.data.isOnActivePath,
-      isCurrentNode: d.data.isCurrentNode,
+      isOnActivePath: tree.activePath.has(id),
+      isCurrentNode: id === tree.currentNodeId,
+      childrenCount: node.childrenIds.length,
     });
-  });
-
-  // ── Build links ──────────────────────────────────────────────
-  const layoutLinks: LayoutLink[] = d3Root.links().map((link) => ({
-    source: { x: link.source.x!, y: link.source.y! },
-    target: { x: link.target.x!, y: link.target.y! },
-    isOnActivePath: (link.target.data as D3Node).isOnActivePath,
-  }));
-
-  // ── Compute bounds & offset to positive coordinates ──────────
-  let minX = Infinity,
-    maxX = -Infinity;
-  let minY = Infinity,
-    maxY = -Infinity;
-  for (const n of layoutNodes) {
-    if (n.x < minX) minX = n.x;
-    if (n.x > maxX) maxX = n.x;
-    if (n.y < minY) minY = n.y;
-    if (n.y > maxY) maxY = n.y;
-  }
-  const PAD = 60;
-  const offsetX = -minX + PAD;
-  const offsetY = -minY + PAD;
-
-  for (const n of layoutNodes) {
-    n.x += offsetX;
-    n.y += offsetY;
-  }
-  for (const l of layoutLinks) {
-    l.source.x += offsetX;
-    l.source.y += offsetY;
-    l.target.x += offsetX;
-    l.target.y += offsetY;
   }
 
-  const bounds = {
-    width: maxX - minX + nodeWidth + PAD * 2,
-    height: maxY - minY + nodeHeight + PAD * 2,
-  };
+  const links: LayoutLink[] = [];
+  for (const [, node] of tree.nodes) {
+    for (const childId of node.childrenIds) {
+      links.push({
+        source: node.id,
+        target: childId,
+        isOnActivePath: tree.activePath.has(childId),
+      });
+    }
+  }
 
-  return { nodes: layoutNodes, links: layoutLinks, bounds };
+  return { nodes, links };
 }

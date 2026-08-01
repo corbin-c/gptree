@@ -10,12 +10,14 @@
     "package": "plasmo package --target=firefox-mv3"
   },
   "dependencies": {
-    "plasmo": "0.89.4",
+    "@xyflow/react": "^12.11.2",
+    "dagre": "^0.8.5",
+    "plasmo": "^0.90.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/d3": "^7.4.3",
+    "@types/dagre": "^0.7.54",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "typescript": "^5.5.0"
@@ -24,6 +26,10 @@
     "host_permissions": [
       "https://chatgpt.com/*"
     ],
+    "sidebar_action": {
+      "default_title": "GPTree",
+      "default_panel": "tabs/tree.html"
+    },
     "browser_specific_settings": {
       "gecko": {
         "id": "gptree@dev.local",

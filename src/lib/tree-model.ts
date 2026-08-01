@@ -65,6 +65,7 @@ function getRole(raw: RawMappingNode): GptreeNode["role"] {
 // ── Main Parser ────────────────────────────────────────────────────
 
 export function parseConversationTree(data: RawConversationResponse): ConversationTree {
+  if (!data?.mapping) throw new Error("Invalid conversation data: missing mapping");
   const nodes = new Map<string, GptreeNode>();
   let rootId = "";
 
