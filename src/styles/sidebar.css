@@ -1,0 +1,38 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #212121;
+  color: #ECECF1;
+}
+
+:root {
+  --gptree-bg: #212121;
+  --gptree-node-bg: #2A2A32;
+  --gptree-node-dim-bg: #1E1E26;
+  --gptree-border: #3E3E4A;
+  --gptree-accent: #10A37F;
+  --gptree-muted: #8E8EA0;
+  --gptree-text: #ECECF1;
+}
+
+@media (prefers-color-scheme: light) {
+  body {
+    background: #FFFFFF;
+    color: #353740;
+  }
+
+  :root {
+    --gptree-bg: #FFFFFF;
+    --gptree-node-bg: #F7F7F8;
+    --gptree-node-dim-bg: #ECECF1;
+    --gptree-border: #D9D9E3;
+    --gptree-accent: #10A37F;
+    --gptree-muted: #6E6E80;
+    --gptree-text: #353740;
+  }
+}
