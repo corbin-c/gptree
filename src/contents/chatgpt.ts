@@ -84,6 +84,7 @@ async function switchToNode(targetId: string): Promise<void> {
     const parentId = targetPath[i + 1];
     const childId = targetPath[i];
     await cycleToChild(mapping, parentId, childId);
+    await sleep(300);
   }
 }
 
@@ -110,45 +111,57 @@ async function cycleToChild(
 ): Promise<void> {
   console.log("[gptree-main] cycleToChild: parentId:", parentId, "targetChildId:", targetChildId);
 
-  // Get the current node visible in the DOM — this is where the branch buttons live
-  const currentId = getCurrentNodeFromDOM();
-  if (!currentId) return;
-
-  const currentEl = document.querySelector(`[data-turn-id-container="${currentId}"]`);
-  if (!currentEl) {
-    console.log("[gptree-main] cycleToChild: current element not found in DOM");
-    return;
-  }
-
-  const prevBtn = currentEl.querySelector('[aria-label="Previous response"]') as HTMLButtonElement | null;
-  const nextBtn = currentEl.querySelector('[aria-label="Next response"]') as HTMLButtonElement | null;
-
-  console.log("[gptree-main] cycleToChild: prev disabled?", prevBtn?.disabled, "next disabled?", nextBtn?.disabled);
-
-  // Pick the non-disabled button
-  const activeBtn = (prevBtn && !prevBtn.disabled) ? prevBtn
-                  : (nextBtn && !nextBtn.disabled) ? nextBtn
-                  : null;
-
-  if (!activeBtn) {
-    console.log("[gptree-main] cycleToChild: no enabled button found");
-    return;
-  }
-
   const siblings = mapping[parentId]?.children as string[] | undefined;
   const maxClicks = siblings ? siblings.length : 10;
-  console.log("[gptree-main] cycleToChild: siblings:", siblings, "maxClicks:", maxClicks, "using:", activeBtn.ariaLabel);
 
   for (let i = 0; i < maxClicks; i++) {
+    // Check if target already visible
     if (document.querySelector(`[data-turn-id-container="${targetChildId}"]`)) {
       console.log("[gptree-main] cycleToChild: target found after", i, "clicks");
       return;
     }
-    console.log("[gptree-main] cycleToChild: click", i + 1, "/", maxClicks, activeBtn.ariaLabel);
+
+    // Re-walk up from leaf to find current sibling each iteration (DOM changes after click)
+    let currentSiblingId: string | null = getCurrentNodeFromDOM();
+    while (currentSiblingId && mapping[currentSiblingId]?.parent !== parentId) {
+      currentSiblingId = mapping[currentSiblingId]?.parent ?? null;
+    }
+    if (!currentSiblingId) currentSiblingId = getCurrentNodeFromDOM();
+    if (!currentSiblingId) {
+      console.log("[gptree-main] cycleToChild: no sibling found at iteration", i);
+      return;
+    }
+
+    const currentEl = document.querySelector(`[data-turn-id-container="${currentSiblingId}"]`);
+    if (!currentEl) {
+      console.log("[gptree-main] cycleToChild: sibling element not in DOM at iteration", i);
+      return;
+    }
+
+    const prevBtn = currentEl.querySelector('[aria-label="Previous response"]') as HTMLButtonElement | null;
+    const nextBtn = currentEl.querySelector('[aria-label="Next response"]') as HTMLButtonElement | null;
+
+    // Prefer the direction towards the target
+    const currentIdx = siblings ? siblings.indexOf(currentSiblingId) : -1;
+    const targetIdx = siblings ? siblings.indexOf(targetChildId) : -1;
+    const preferNext = currentIdx !== -1 && targetIdx !== -1 && targetIdx > currentIdx;
+
+    const activeBtn = preferNext
+      ? ((nextBtn && !nextBtn.disabled) ? nextBtn : (prevBtn && !prevBtn.disabled) ? prevBtn : null)
+      : ((prevBtn && !prevBtn.disabled) ? prevBtn : (nextBtn && !nextBtn.disabled) ? nextBtn : null);
+
+    if (!activeBtn) {
+      console.log("[gptree-main] cycleToChild: no enabled button at iteration", i);
+      return;
+    }
+
+    console.log("[gptree-main] cycleToChild: click", i + 1, "/", maxClicks,
+      activeBtn.ariaLabel, "on sibling:", currentSiblingId);
     activeBtn.click();
     await sleep(500);
-    const currentNode = getCurrentNodeFromDOM();
-    console.log("[gptree-main] cycleToChild: after click, current DOM node:", currentNode);
+
+    const newLeaf = getCurrentNodeFromDOM();
+    console.log("[gptree-main] cycleToChild: after click, leaf:", newLeaf);
   }
   console.log("[gptree-main] cycleToChild: exhausted all clicks, target not found");
 }
