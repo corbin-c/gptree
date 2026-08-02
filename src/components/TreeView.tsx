@@ -10,7 +10,13 @@ import type { ConversationTree } from "../lib/tree-model";
 
 const nodeTypes = { gptreeNode: GptreeNode };
 
-export function TreeView({ tree }: { tree: ConversationTree }) {
+export function TreeView({
+  tree,
+  onNodeClick,
+}: {
+  tree: ConversationTree;
+  onNodeClick?: (nodeId: string) => void;
+}) {
   const layout = useMemo(() => computeTreeLayout(tree), [tree]);
 
   const nodes: Node[] = useMemo(
@@ -69,6 +75,11 @@ export function TreeView({ tree }: { tree: ConversationTree }) {
         zoomOnScroll
         zoomOnPinch
         proOptions={{ hideAttribution: true }}
+        onNodeClick={(_event, node) => {
+          if (onNodeClick && !node.data.isOnActivePath) {
+            onNodeClick(node.id);
+          }
+        }}
       >
       </ReactFlow>
     </div>

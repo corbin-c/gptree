@@ -13,14 +13,19 @@ interface GptreeNodeData {
   isOnActivePath: boolean;
   isCurrentNode: boolean;
   childrenCount: number;
+  nodeId: string;
+  onNodeClick?: (nodeId: string) => void;
 }
 
 export function GptreeNode({ data }: NodeProps) {
-  const { role, preview, isOnActivePath, isCurrentNode, childrenCount } =
+  const { role, preview, isOnActivePath, isCurrentNode, childrenCount, nodeId, onNodeClick } =
     data as unknown as GptreeNodeData;
+
+  const isClickable = !isOnActivePath;
 
   return (
     <div
+      onClick={isClickable && onNodeClick ? () => onNodeClick?.(nodeId) : undefined}
       style={{
         background: isOnActivePath
           ? "var(--gptree-node-bg, #2A2A32)"
@@ -35,7 +40,8 @@ export function GptreeNode({ data }: NodeProps) {
         color: "var(--gptree-text, #ECECF1)",
         opacity: isOnActivePath ? 1 : 0.45,
         width: 200,
-        cursor: "default",
+        cursor: isClickable ? "pointer" : "default",
+        ...(isClickable ? { transition: "border-color 0.15s" } : {}),
       }}
     >
       <div

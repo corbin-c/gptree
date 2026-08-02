@@ -10,3 +10,19 @@ window.addEventListener("message", (event) => {
     browser.runtime.sendMessage(event.data.message).catch(() => {});
   }
 });
+
+type GptreeMessage =
+  | { type: "gptree:switch-to-node"; targetId: string }
+  | { type: "gptree:get-conversation" };
+
+browser.runtime.onMessage.addListener((message: GptreeMessage) => {
+  if (message.type === "gptree:switch-to-node") {
+    console.log("[gptree-bridge] forwarding switch-to-node:", message.targetId);
+    window.postMessage({ type: "gptree:switch-to-node", targetId: message.targetId }, "*");
+    return;
+  }
+  if (message.type === "gptree:get-conversation") {
+    window.postMessage({ type: "gptree:get-conversation" }, "*");
+    return;
+  }
+});

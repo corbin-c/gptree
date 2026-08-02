@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { parseConversationTree } from "../lib/tree-model";
+import { useEffect, useState, useCallback } from "react";
+import { parseConversationTree, updateCurrentNode } from "../lib/tree-model";
 import type { ConversationTree } from "../lib/tree-model";
 import { TreeView } from "../components/TreeView";
 import "@xyflow/react/dist/style.css";
@@ -8,7 +8,6 @@ import "../styles/sidebar.css";
 export default function TreeTab() {
   const [tree, setTree] = useState<ConversationTree | null>(null);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     const handleMessage = (message: any) => {
       if (message?.type === "gptree:conversation") {
@@ -22,6 +21,18 @@ export default function TreeTab() {
           setError(e instanceof Error ? e.message : "Parse error");
           setTree(null);
         }
+      } else if (message?.type === "gptree:current-node-changed") {
+        const payload = message.payload;
+        if (!payload?.current_node) return;
+
+        setTree((currentTree) => {
+          if (!currentTree) return currentTree;
+          try {
+            return updateCurrentNode(currentTree, payload.current_node);
+          } catch {
+            return currentTree;
+          }
+        });
       }
     };
     browser.runtime.onMessage.addListener(handleMessage);
@@ -29,6 +40,18 @@ export default function TreeTab() {
       browser.runtime.onMessage.removeListener(handleMessage);
     };
   }, []);
+
+  const handleNodeClick = useCallback(
+    (nodeId: string) => {
+      if (tree?.activePath.has(nodeId)) return;
+      console.log("[gptree-sidebar] sending switch-to-node:", nodeId);
+      browser.runtime.sendMessage({
+        type: "gptree:switch-to-node",
+        targetId: nodeId,
+      }).catch(() => {});
+    },
+    [tree],
+  );
 
   if (error) {
     return (
@@ -72,5 +95,5 @@ export default function TreeTab() {
     );
   }
 
-  return <TreeView tree={tree} />;
+  return <TreeView tree={tree} onNodeClick={handleNodeClick} />;
 }
