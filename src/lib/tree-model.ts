@@ -101,6 +101,18 @@ export function parseConversationTree(data: RawConversationResponse): Conversati
   // Include root
   if (rootId) activePath.add(rootId)
 
+  // Extend downstream through default branch (last child at each level)
+  let downstreamCursor: string | null = data.current_node
+  while (downstreamCursor && nodes.has(downstreamCursor)) {
+    const node: GptreeNode = nodes.get(downstreamCursor)!
+    if (node.childrenIds.length > 0) {
+      downstreamCursor = node.childrenIds[node.childrenIds.length - 1]
+      activePath.add(downstreamCursor as string)
+    } else {
+      break
+    }
+  }
+
   return { nodes, rootId, currentNodeId: data.current_node, activePath }
 }
 
@@ -117,6 +129,18 @@ export function updateCurrentNode(tree: ConversationTree, newCurrentNodeId: stri
     cursor = node.parentId
   }
   activePath.add(tree.rootId)
+
+  // Extend downstream through default branch (last child at each level)
+  let downstreamCursor: string | null = newCurrentNodeId
+  while (downstreamCursor && tree.nodes.has(downstreamCursor)) {
+    const node: GptreeNode = tree.nodes.get(downstreamCursor)!
+    if (node.childrenIds.length > 0) {
+      downstreamCursor = node.childrenIds[node.childrenIds.length - 1]
+      activePath.add(downstreamCursor as string)
+    } else {
+      break
+    }
+  }
 
   return { ...tree, currentNodeId: newCurrentNodeId, activePath }
 }
