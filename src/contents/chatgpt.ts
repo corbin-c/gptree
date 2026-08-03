@@ -104,6 +104,50 @@ function getCurrentNodeFromDOM(): string | null {
   return containers[containers.length - 1].getAttribute("data-turn-id-container");
 }
 
+function getRootId(mapping: Record<string, any>): string | null {
+  const keys = Object.keys(mapping);
+  for (let i = 0; i < keys.length; i++) {
+    if (mapping[keys[i]].parent === null) return keys[i];
+  }
+  return null;
+}
+
+function findNearestUserMessage(mapping: Record<string, any>, nodeId: string): string | null {
+  if (!mapping) return null;
+
+  let cursor: string | null = nodeId;
+  while (cursor && mapping[cursor]) {
+    if (mapping[cursor].message?.author?.role === "user") return cursor;
+    cursor = mapping[cursor].parent;
+  }
+  return null;
+}
+
+function getUserTOCIndex(mapping: Record<string, any>, userNodeId: string): number {
+  const rootId = getRootId(mapping);
+  if (!rootId) return -1;
+
+  const userNodes: string[] = [];
+  const stack: string[] = [rootId];
+
+  while (stack.length > 0) {
+    const nodeId = stack.pop()!;
+    if (mapping[nodeId]?.message?.author?.role === "user") {
+      userNodes.push(nodeId);
+    }
+    const children = mapping[nodeId]?.children as string[] | undefined;
+    if (children) {
+      // Push in reverse so first child is processed first (left-to-right DFS)
+      for (let i = children.length - 1; i >= 0; i--) {
+        stack.push(children[i]);
+      }
+    }
+  }
+
+  const idx = userNodes.indexOf(userNodeId);
+  return idx;
+}
+
 async function cycleToChild(
   mapping: Record<string, any>,
   parentId: string,
@@ -113,6 +157,8 @@ async function cycleToChild(
 
   const siblings = mapping[parentId]?.children as string[] | undefined;
   const maxClicks = siblings ? siblings.length : 10;
+
+  let didTryTOC = false;
 
   for (let i = 0; i < maxClicks; i++) {
     // Check if target already visible
@@ -151,6 +197,29 @@ async function cycleToChild(
       : ((prevBtn && !prevBtn.disabled) ? prevBtn : (nextBtn && !nextBtn.disabled) ? nextBtn : null);
 
     if (!activeBtn) {
+      if (!didTryTOC) {
+        didTryTOC = true;
+        const userNodeId = findNearestUserMessage(mapping, parentId);
+        if (!userNodeId) {
+          console.log("[gptree-main] cycleToChild: no user ancestor for parent", parentId);
+          return;
+        }
+        const tocIdx = getUserTOCIndex(mapping, userNodeId);
+        if (tocIdx < 0) {
+          console.log("[gptree-main] cycleToChild: user node not in TOC", userNodeId);
+          return;
+        }
+        const tocBtn = document.querySelector(`[data-toc-item-index="${tocIdx + 1}"]`) as HTMLButtonElement | null;
+        if (!tocBtn) {
+          console.log("[gptree-main] cycleToChild: TOC button not found for index", tocIdx);
+          return;
+        }
+        console.log("[gptree-main] cycleToChild: TOC fallback, clicking item", tocIdx, "for user", userNodeId);
+        tocBtn.click();
+        await sleep(1000);
+        i--;
+        continue;
+      }
       console.log("[gptree-main] cycleToChild: no enabled button at iteration", i);
       return;
     }

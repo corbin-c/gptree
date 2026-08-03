@@ -1,14 +1,19 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { parseConversationTree, updateCurrentNode } from "../lib/tree-model";
 import type { ConversationTree } from "../lib/tree-model";
 import { TreeView } from "../components/TreeView";
 import "@xyflow/react/dist/style.css";
+import { ReactFlowProvider } from "@xyflow/react";
 import "../styles/sidebar.css";
 
 export default function TreeTab() {
   const [tree, setTree] = useState<ConversationTree | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchVisible, setSearchVisible] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     const handleMessage = (message: any) => {
       if (message?.type === "gptree:conversation") {
@@ -42,6 +47,12 @@ export default function TreeTab() {
     };
   }, []);
 
+  useEffect(() => {
+    if (searchVisible && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchVisible]);
+
   const handleNodeClick = useCallback(
     (nodeId: string) => {
       if (tree?.activePath.has(nodeId)) return;
@@ -60,6 +71,20 @@ export default function TreeTab() {
     },
     [],
   );
+
+  const hoveredNode = hoveredNodeId && tree ? tree.nodes.get(hoveredNodeId) : null;
+
+  const searchResults = useMemo(() => {
+    const matches = new Set<string>();
+    const term = searchQuery.trim().toLowerCase();
+    if (!tree || !term) return matches;
+    for (const [id, node] of tree.nodes) {
+      if (node.content.toLowerCase().includes(term)) {
+        matches.add(id);
+      }
+    }
+    return matches;
+  }, [searchQuery, tree]);
 
   if (error) {
     return (
@@ -103,11 +128,64 @@ export default function TreeTab() {
     );
   }
 
-  const hoveredNode = hoveredNodeId ? tree.nodes.get(hoveredNodeId) : null;
-
   return (
     <div style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
-      <TreeView tree={tree} onNodeClick={handleNodeClick} onNodeHover={handleNodeHover} />
+      <button
+        onClick={() => {
+          setSearchVisible(!searchVisible);
+          if (searchVisible) setSearchQuery("");
+        }}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          zIndex: 10,
+          background: searchVisible ? 'var(--gptree-accent, #10A37F)' : 'var(--gptree-node-bg, #2A2A32)',
+          border: '1px solid var(--gptree-border, #3E3E4A)',
+          borderRadius: 6,
+          color: searchVisible ? '#fff' : 'var(--gptree-text, #ECECF1)',
+          width: 32,
+          height: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          fontSize: 16,
+          lineHeight: 1,
+          padding: 0,
+        }}
+        title="Search nodes"
+      >
+        &#x1F50D;
+      </button>
+      {searchVisible && (
+        <input
+          type="text"
+          ref={searchInputRef}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search in messages..."
+          autoFocus
+          style={{
+            position: 'absolute',
+            top: 46,
+            left: 8,
+            right: 8,
+            zIndex: 10,
+            background: 'var(--gptree-node-bg, #2A2A32)',
+            border: '1px solid var(--gptree-accent, #10A37F)',
+            borderRadius: 6,
+            color: 'var(--gptree-text, #ECECF1)',
+            padding: '6px 10px',
+            fontSize: 13,
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            outline: 'none',
+          }}
+        />
+      )}
+      <ReactFlowProvider>
+        <TreeView tree={tree} onNodeClick={handleNodeClick} onNodeHover={handleNodeHover} searchResults={searchResults} />
+      </ReactFlowProvider>
       {hoveredNode && (
         <div style={{
           position: 'absolute',

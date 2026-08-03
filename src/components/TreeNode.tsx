@@ -12,13 +12,14 @@ interface GptreeNodeData {
   preview: string
   isOnActivePath: boolean
   isCurrentNode: boolean
+  isSearchMatch?: boolean
   childrenCount: number
   nodeId: string
   onNodeClick?: (nodeId: string) => void
 }
 
 export function GptreeNode({ data }: NodeProps) {
-  const { role, preview, isOnActivePath, isCurrentNode, childrenCount, nodeId, onNodeClick } = data as unknown as GptreeNodeData
+  const { role, preview, isOnActivePath, isCurrentNode, isSearchMatch, childrenCount, nodeId, onNodeClick } = data as unknown as GptreeNodeData
 
   const isClickable = !isOnActivePath
 
@@ -27,7 +28,7 @@ export function GptreeNode({ data }: NodeProps) {
       onClick={isClickable && onNodeClick ? () => onNodeClick?.(nodeId) : undefined}
       style={{
         background: isOnActivePath ? 'var(--gptree-node-bg, #2A2A32)' : 'var(--gptree-node-dim-bg, #1E1E26)',
-        border: isCurrentNode ? '2px solid var(--gptree-accent, #10A37F)' : '1px solid var(--gptree-border, #3E3E4A)',
+        border: isCurrentNode ? '2px solid var(--gptree-accent, #10A37F)' : isSearchMatch ? '1px solid #EAB308' : '1px solid var(--gptree-border, #3E3E4A)',
         borderRadius: 8,
         padding: '8px 12px',
         fontSize: 13,
@@ -36,7 +37,8 @@ export function GptreeNode({ data }: NodeProps) {
         opacity: isOnActivePath ? 1 : 0.45,
         width: 200,
         cursor: isClickable ? 'pointer' : 'default',
-        ...(isClickable ? { transition: 'border-color 0.15s' } : {})
+        ...(isClickable ? { transition: 'border-color 0.15s' } : {}),
+        ...(isSearchMatch ? { boxShadow: '0 0 8px rgba(234,179,8,0.5)' } : {})
       }}
     >
       <div

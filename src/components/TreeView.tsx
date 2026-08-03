@@ -1,13 +1,24 @@
-import { useMemo } from 'react'
-import { ReactFlow, type Node, type Edge } from '@xyflow/react'
+import { useMemo, useEffect } from 'react'
+import { ReactFlow, type Node, type Edge, useReactFlow } from '@xyflow/react'
 import { GptreeNode } from './TreeNode'
 import { computeTreeLayout } from '../lib/tree-layout'
 import type { ConversationTree } from '../lib/tree-model'
 
 const nodeTypes = { gptreeNode: GptreeNode }
 
-export function TreeView({ tree, onNodeClick, onNodeHover }: { tree: ConversationTree; onNodeClick?: (nodeId: string) => void; onNodeHover?: (nodeId: string | null) => void }) {
+export function TreeView({ tree, searchResults, onNodeClick, onNodeHover }: { tree: ConversationTree; searchResults?: Set<string>; onNodeClick?: (nodeId: string) => void; onNodeHover?: (nodeId: string | null) => void }) {
   const layout = useMemo(() => computeTreeLayout(tree), [tree])
+
+  const { fitView } = useReactFlow();
+
+  useEffect(() => {
+    if (searchResults && searchResults.size > 0) {
+      const matchingNodeIds = nodes.filter(n => searchResults.has(n.id)).map(n => ({ id: n.id }));
+      if (matchingNodeIds.length > 0) {
+        fitView({ nodes: matchingNodeIds, padding: 0.3, duration: 300 });
+      }
+    }
+  }, [searchResults]);
 
   const nodes: Node[] = useMemo(
     () =>
@@ -24,10 +35,11 @@ export function TreeView({ tree, onNodeClick, onNodeHover }: { tree: Conversatio
             content: n.content,
             isOnActivePath: n.isOnActivePath,
             isCurrentNode: n.isCurrentNode,
-            childrenCount: n.childrenCount
+            childrenCount: n.childrenCount,
+            isSearchMatch: searchResults?.has(n.id) ?? false
           }
         })),
-    [layout]
+    [layout, searchResults]
   )
 
   const edges: Edge[] = useMemo(
