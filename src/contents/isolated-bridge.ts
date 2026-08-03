@@ -1,7 +1,7 @@
 import type { PlasmoCSConfig } from "plasmo";
 
 export const config: PlasmoCSConfig = {
-  matches: ["https://chatgpt.com/c/*"],
+  matches: ["https://chatgpt.com/c/*", "https://chatgpt.com/g/*/c/*"],
 };
 
 window.addEventListener("message", (event) => {
@@ -16,6 +16,7 @@ type GptreeMessage =
   | { type: "gptree:get-conversation" };
 
 browser.runtime.onMessage.addListener((message: GptreeMessage) => {
+  console.log("[gptree-bridge] runtime.onMessage received:", message?.type);
   if (message.type === "gptree:switch-to-node") {
     console.log("[gptree-bridge] forwarding switch-to-node:", message.targetId);
     window.postMessage({ type: "gptree:switch-to-node", targetId: message.targetId }, "*");

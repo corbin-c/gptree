@@ -12,7 +12,8 @@ export function TreeView({ tree, onNodeClick }: { tree: ConversationTree; onNode
   const nodes: Node[] = useMemo(
     () =>
       layout.nodes
-        .filter((n) => n.role !== 'root' && n.role !== 'system' && n.role !== 'tool')
+        .filter((n) => n.role !== 'root')
+        // .filter((n) => n.role !== "root" && n.role !== "system" && n.role !== "tool")
         .map((n) => ({
           id: n.id,
           type: 'gptreeNode',

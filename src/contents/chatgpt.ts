@@ -2,7 +2,7 @@ import type { PlasmoCSConfig } from "plasmo";
 import { installInterceptor } from "../lib/interceptor";
 
 export const config: PlasmoCSConfig = {
-  matches: ["https://chatgpt.com/c/*"],
+  matches: ["https://chatgpt.com/c/*", "https://chatgpt.com/g/*/c/*"],
   world: "MAIN",
 };
 
