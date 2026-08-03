@@ -6,7 +6,7 @@ import type { ConversationTree } from '../lib/tree-model'
 
 const nodeTypes = { gptreeNode: GptreeNode }
 
-export function TreeView({ tree, onNodeClick }: { tree: ConversationTree; onNodeClick?: (nodeId: string) => void }) {
+export function TreeView({ tree, onNodeClick, onNodeHover }: { tree: ConversationTree; onNodeClick?: (nodeId: string) => void; onNodeHover?: (nodeId: string | null) => void }) {
   const layout = useMemo(() => computeTreeLayout(tree), [tree])
 
   const nodes: Node[] = useMemo(
@@ -21,6 +21,7 @@ export function TreeView({ tree, onNodeClick }: { tree: ConversationTree; onNode
           data: {
             role: n.role,
             preview: n.preview,
+            content: n.content,
             isOnActivePath: n.isOnActivePath,
             isCurrentNode: n.isCurrentNode,
             childrenCount: n.childrenCount
@@ -69,6 +70,8 @@ export function TreeView({ tree, onNodeClick }: { tree: ConversationTree; onNode
             onNodeClick(node.id)
           }
         }}
+        onNodeMouseEnter={(_event, node) => onNodeHover?.(node.id)}
+        onNodeMouseLeave={() => onNodeHover?.(null)}
       ></ReactFlow>
     </div>
   )

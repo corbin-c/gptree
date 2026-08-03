@@ -13,6 +13,7 @@ export interface LayoutNode {
   isOnActivePath: boolean;
   isCurrentNode: boolean;
   childrenCount: number;
+  content: string;
 }
 
 export interface LayoutLink {
@@ -57,7 +58,7 @@ export function computeTreeLayout(tree: ConversationTree): {
   // Build set of visible node IDs (exclude system / tool)
   const visibleNodes = new Set<string>();
   for (const [id, node] of tree.nodes) {
-    if (!HIDDEN_ROLES.has(node.role)) {
+    if (!HIDDEN_ROLES.has(node.role) && (node.preview.length > 0 || node.role === 'root')) {
       visibleNodes.add(id);
     }
   }
@@ -104,6 +105,7 @@ export function computeTreeLayout(tree: ConversationTree): {
       isOnActivePath: tree.activePath.has(id),
       isCurrentNode: id === tree.currentNodeId,
       childrenCount: node.childrenIds.length,
+      content: node.content,
     });
   }
 

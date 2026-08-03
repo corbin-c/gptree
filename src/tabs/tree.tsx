@@ -8,6 +8,7 @@ import "../styles/sidebar.css";
 export default function TreeTab() {
   const [tree, setTree] = useState<ConversationTree | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   useEffect(() => {
     const handleMessage = (message: any) => {
       if (message?.type === "gptree:conversation") {
@@ -53,6 +54,13 @@ export default function TreeTab() {
     [tree],
   );
 
+  const handleNodeHover = useCallback(
+    (nodeId: string | null) => {
+      setHoveredNodeId(nodeId);
+    },
+    [],
+  );
+
   if (error) {
     return (
       <div
@@ -95,5 +103,42 @@ export default function TreeTab() {
     );
   }
 
-  return <TreeView tree={tree} onNodeClick={handleNodeClick} />;
+  const hoveredNode = hoveredNodeId ? tree.nodes.get(hoveredNodeId) : null;
+
+  return (
+    <div style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <TreeView tree={tree} onNodeClick={handleNodeClick} onNodeHover={handleNodeHover} />
+      {hoveredNode && (
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          maxHeight: '30%',
+          background: 'var(--gptree-node-bg, #2A2A32)',
+          borderTop: '1px solid var(--gptree-border, #3E3E4A)',
+          padding: '10px 14px',
+          overflow: 'auto',
+          fontSize: 12,
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          color: 'var(--gptree-text, #ECECF1)',
+          lineHeight: 1.5,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        }}>
+          <div style={{
+            color: 'var(--gptree-muted, #8E8EA0)',
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            marginBottom: 6,
+            fontWeight: 600,
+          }}>
+            {hoveredNode.role}
+          </div>
+          {hoveredNode.content}
+        </div>
+      )}
+    </div>
+  );
 }
