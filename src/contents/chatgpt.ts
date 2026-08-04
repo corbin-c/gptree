@@ -124,23 +124,16 @@ function findNearestUserMessage(mapping: Record<string, any>, nodeId: string): s
 }
 
 function getUserTOCIndex(mapping: Record<string, any>, userNodeId: string): number {
-  const rootId = getRootId(mapping);
-  if (!rootId) return -1;
+  const currentId = getCurrentNodeFromDOM();
+  if (!currentId) return -1;
+
+  const path = buildPath(mapping, currentId);
+  path.reverse();
 
   const userNodes: string[] = [];
-  const stack: string[] = [rootId];
-
-  while (stack.length > 0) {
-    const nodeId = stack.pop()!;
+  for (const nodeId of path) {
     if (mapping[nodeId]?.message?.author?.role === "user") {
       userNodes.push(nodeId);
-    }
-    const children = mapping[nodeId]?.children as string[] | undefined;
-    if (children) {
-      // Push in reverse so first child is processed first (left-to-right DFS)
-      for (let i = children.length - 1; i >= 0; i--) {
-        stack.push(children[i]);
-      }
     }
   }
 
