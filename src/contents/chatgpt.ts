@@ -209,13 +209,43 @@ async function cycleToChild(
           console.log("[gptree-main] cycleToChild: user node not in TOC", userNodeId);
           return;
         }
-        const tocBtn = document.querySelector(`[data-toc-item-index="${tocIdx + 1}"]`) as HTMLButtonElement | null;
-        if (!tocBtn) {
-          console.log("[gptree-main] cycleToChild: TOC button not found for index", tocIdx);
+        // Trigger the full TOC popover by dispatching mouseover on a small TOC dot
+        const smallTocDot = document.querySelector('[data-toc-item-index]');
+        if (!smallTocDot) {
+          console.log("[gptree-main] cycleToChild: small TOC dots not found in DOM");
           return;
         }
-        console.log("[gptree-main] cycleToChild: TOC fallback, clicking item", tocIdx, "for user", userNodeId);
-        tocBtn.click();
+        smallTocDot.dispatchEvent(new MouseEvent("mouseover", { bubbles: true, cancelable: true }));
+        console.log("[gptree-main] cycleToChild: triggered full TOC via mouseover");
+
+        await sleep(200);
+
+        // Find the full TOC popover ul and click the Nth item (tocIdx is 0-based)
+        const popoverUl = document.querySelector('.popover ul');
+        if (!popoverUl) {
+          console.log("[gptree-main] cycleToChild: full TOC popover not found");
+          return;
+        }
+
+        const items = popoverUl.querySelectorAll(':scope > li');
+        const targetLi = items[tocIdx + 1];
+        if (!targetLi) {
+          console.log("[gptree-main] cycleToChild: TOC index out of bounds:", tocIdx, "(total items:", items.length, ")");
+          return;
+        }
+
+        // Ensure the item is visible within the scrollable popover
+        targetLi.scrollIntoView({ block: 'nearest' });
+
+        // Click the inner button
+        const btn = targetLi.querySelector('button') as HTMLButtonElement | null;
+        if (!btn) {
+          console.log("[gptree-main] cycleToChild: no button in TOC item at index", tocIdx);
+          return;
+        }
+
+        console.log("[gptree-main] cycleToChild: full TOC fallback, clicking item", tocIdx, "for user", userNodeId);
+        btn.click();
         await sleep(1000);
         i--;
         continue;
