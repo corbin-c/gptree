@@ -84,7 +84,7 @@ async function switchToNode(targetId: string): Promise<void> {
     const parentId = targetPath[i + 1];
     const childId = targetPath[i];
     await cycleToChild(mapping, parentId, childId);
-    await sleep(300);
+    await sleep(100);
   }
 }
 
@@ -218,7 +218,7 @@ async function cycleToChild(
         smallTocDot.dispatchEvent(new MouseEvent("mouseover", { bubbles: true, cancelable: true }));
         console.log("[gptree-main] cycleToChild: triggered full TOC via mouseover");
 
-        await sleep(200);
+        await sleep(100);
 
         // Find the full TOC popover ul and click the Nth item (tocIdx is 0-based)
         const popoverUl = document.querySelector('.popover ul');
@@ -246,7 +246,7 @@ async function cycleToChild(
 
         console.log("[gptree-main] cycleToChild: full TOC fallback, clicking item", tocIdx, "for user", userNodeId);
         btn.click();
-        await sleep(1000);
+        await sleep(100);
         i--;
         continue;
       }
@@ -257,7 +257,7 @@ async function cycleToChild(
     console.log("[gptree-main] cycleToChild: click", i + 1, "/", maxClicks,
       activeBtn.ariaLabel, "on sibling:", currentSiblingId);
     activeBtn.click();
-    await sleep(500);
+    await sleep(100);
 
     const newLeaf = getCurrentNodeFromDOM();
     console.log("[gptree-main] cycleToChild: after click, leaf:", newLeaf);
